@@ -591,6 +591,34 @@ public class MainActivity extends Activity {
         }), Ui.gap(this, 6));
         box.addView(priv, Ui.gap(this, 10));
 
+        box.addView(Ui.section(this, "版本更新"), Ui.gap(this, 8));
+        LinearLayout upd = Ui.card(this);
+        upd.addView(Ui.osTip(this,
+                "检查更新连接本项目 GitHub 仓库的 Releases（api.github.com 公开接口），"
+                + "只在点按钮时联网、只读取版本信息，不上传任何数据；发现新版只给下载入口，不自动安装。", 2),
+                Ui.gap(this, 8));
+        upd.addView(Ui.row(this,
+                Ui.button(this, "检查更新", 2, new View.OnClickListener() {
+                    @Override public void onClick(View v) { checkUpdate(); }
+                }),
+                Ui.button(this, "项目地址", 2, new View.OnClickListener() {
+                    @Override public void onClick(View v) { openGithub(UpdateChecker.REPO_URL); }
+                })), Ui.gap(this, 6));
+        upd.addView(Ui.row(this,
+                Ui.button(this, "在 GitHub 点个 Star", 2, new View.OnClickListener() {
+                    @Override public void onClick(View v) { openGithub(UpdateChecker.STAR_URL); }
+                }),
+                Ui.button(this, "更新日志", 2, new View.OnClickListener() {
+                    @Override public void onClick(View v) { openGithub(UpdateChecker.CHANGELOG_URL); }
+                })), Ui.gap(this, 6));
+        TextView uv = new TextView(this);
+        uv.setText("当前版本 " + UpdateChecker.APP_VERSION
+                + " · 数据源：github.com/" + UpdateChecker.REPO + "/releases（不点不联网）");
+        uv.setTextSize(10);
+        uv.setTextColor(Ui.MUTED);
+        upd.addView(uv, Ui.gap(this, 6));
+        box.addView(upd, Ui.gap(this, 10));
+
         box.addView(Ui.section(this, "声明与作者"), Ui.gap(this, 8));
         LinearLayout about = Ui.card(this);
         about.addView(Ui.button(this, "免责声明 / 完整条款", 1, new View.OnClickListener() {
@@ -1049,12 +1077,102 @@ public class MainActivity extends Activity {
                 .setNegativeButton("关闭", null).show();
     }
 
+    /** v1.1.0：手动检查更新，连接本项目 GitHub Releases（只读取，不上传）。 */
+    private void checkUpdate() {
+        toast("正在连接 GitHub 检查更新…");
+        UpdateChecker.checkAsync(new UpdateChecker.Callback() {
+            @Override public void done(UpdateChecker.Info info) { showUpdateResult(info); }
+        });
+    }
+
+    private void openGithub(String url) {
+        if (!UpdateChecker.open(MainActivity.this, url)) toast("无法打开浏览器");
+    }
+
+    /** 结果弹窗：和「设置 / 关于」同一套液态玻璃卡片。 */
+    private void showUpdateResult(final UpdateChecker.Info info) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4));
+        box.addView(Ui.osTitle(this, "检查更新", UpdateChecker.APP_VERSION), Ui.gap(this, 8));
+        box.addView(Ui.osTip(this, info.status(), info.ok && info.newer ? 1 : 2), Ui.gap(this, 10));
+
+        box.addView(Ui.section(this, "数据源"), Ui.gap(this, 8));
+        box.addView(Ui.osRow(this, "GitHub 仓库", UpdateChecker.REPO, "", true), Ui.match());
+        box.addView(Ui.osRow(this, "联网时机", "仅手动点「检查更新」时读取公开 Release 信息，不上传任何数据", "", true), Ui.match());
+        box.addView(Ui.osRow(this, "本机版本", UpdateChecker.APP_VERSION, "", false), Ui.match());
+        if (info.ok) {
+            box.addView(Ui.section(this, "最新版本"), Ui.gap(this, 8));
+            String title = info.tag + (info.name.length() > 0 ? " · " + info.name : "");
+            box.addView(Ui.osRow(this, "Release", title, "", true), Ui.match());
+            box.addView(Ui.osRow(this, "下载页", info.htmlUrl, "", false), Ui.match());
+            if (info.body.length() > 0) {
+                String brief = info.body.length() > 420 ? info.body.substring(0, 420) + "…" : info.body;
+                box.addView(Ui.section(this, "更新说明"), Ui.gap(this, 8));
+                box.addView(Ui.osTip(this, brief, 0), Ui.gap(this, 8));
+            }
+        }
+
+        final String page = info.ok && info.htmlUrl.length() > 0
+                ? info.htmlUrl : UpdateChecker.LATEST_URL;
+        final String apk = info.apkUrl.length() > 0 ? info.apkUrl : UpdateChecker.RELEASES_URL;
+        new GlassDialog.Builder(this)
+                .setTitle(info.ok && info.newer ? "发现新版本" : "检查更新")
+                .setSubtitle("连接本项目 GitHub Releases · 只读取版本信息")
+                .setView(box)
+                .setPositiveButton("打开 Releases / 下载页", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { openGithub(page); }
+                })
+                .setNeutralButton(info.ok && info.apkUrl.length() > 0 ? "直接下载 APK" : "项目主页",
+                        new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        openGithub(info.ok && info.apkUrl.length() > 0 ? apk : UpdateChecker.REPO_URL);
+                    }
+                })
+                .setNegativeButton("关闭", null).show();
+    }
+
+    /** 图二风格的项目 / 更新行，设置页与关于页共用。 */
+    private void addProjectRows(LinearLayout box) {
+        box.addView(Ui.section(this, "项目与更新"), Ui.gap(this, 8));
+        View r1 = Ui.osRow(this, "检查更新", "连接本项目 GitHub Releases，手动检查新版本", "", true);
+        r1.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { checkUpdate(); }
+        });
+        box.addView(r1, Ui.match());
+        View r2 = Ui.osRow(this, "项目地址", UpdateChecker.REPO_URL, "", true);
+        r2.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openGithub(UpdateChecker.REPO_URL); }
+        });
+        box.addView(r2, Ui.match());
+        View r3 = Ui.osRow(this, "在 GitHub 点个 Star", UpdateChecker.STAR_URL, "", true);
+        r3.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openGithub(UpdateChecker.STAR_URL); }
+        });
+        box.addView(r3, Ui.match());
+        View r4 = Ui.osRow(this, "更新日志", "CHANGELOG.md", "", true);
+        r4.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openGithub(UpdateChecker.CHANGELOG_URL); }
+        });
+        box.addView(r4, Ui.match());
+        View r5 = Ui.osRow(this, "开源许可声明", "MIT · LICENSE", "", true);
+        r5.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openGithub(UpdateChecker.LICENSE_URL); }
+        });
+        box.addView(r5, Ui.match());
+        View r6 = Ui.osRow(this, "同账号下的另一个项目", UpdateChecker.OTHER_REPO, "", false);
+        r6.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openGithub(UpdateChecker.OTHER_REPO_URL); }
+        });
+        box.addView(r6, Ui.match());
+    }
+
     private void aboutDialog() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         int pad = Ui.dp(this, 4);
         box.setPadding(pad, pad, pad, pad);
-        box.addView(Ui.osTitle(this, "使用帮助", "v1.0"), Ui.gap(this, 8));
+        box.addView(Ui.osTitle(this, "使用帮助", "v1.1.0"), Ui.gap(this, 8));
         box.addView(Ui.osTip(this,
                 "本启动器按 cpolar 官方文档实现：authtoken 认证、cpolar.yml 多隧道、"
                 + "start-all 一次启动、本机 4040 检查接口获取公网地址。", 2), Ui.gap(this, 10));
@@ -1070,8 +1188,15 @@ public class MainActivity extends Activity {
                 + "· 环境变量指向系统 CA 目录 /system/etc/security/cacerts 以适配 Android TLS\n"
                 + "· 免费版随机域名约 24 小时变化；固定域名需在官方面板配置\n"
                 + "· 21 套主题、动态玻璃弹窗、通知栏、隐藏后台沿用历史启动器", 0), Ui.gap(this, 10));
+        addProjectRows(box);
+        box.addView(Ui.section(this, "v1.1.0 新增"));
+        box.addView(Ui.osTip(this,
+                "· 新增「检查更新」：连接本项目 GitHub Releases，手动点击才联网，只读取版本信息\n"
+                + "· 设置页「版本更新」卡片：检查更新 / 项目地址 / Star / 更新日志\n"
+                + "· 关于页新增项目与更新行，含另一个项目仓库入口\n"
+                + "· 免责声明与域名清单如实补充 GitHub 更新检查（不点不联网）", 0), Ui.gap(this, 10));
         TextView v = new TextView(this);
-        v.setText("\n版本 1.0.0 · 包名 net.cpolar.mobile\n"
+        v.setText("\n版本 1.1.0 · 包名 net.cpolar.mobile\n"
                 + "内含 cpolar 官方闭源客户端，版权归官方所有");
         v.setTextSize(10);
         v.setTextColor(Ui.MUTED);
@@ -1440,7 +1565,7 @@ public class MainActivity extends Activity {
     private void copyDiagnostics() {
         DeviceInfo.Info i = DeviceInfo.collect(this);
         StringBuilder b = new StringBuilder("Cpolar 启动器 运行诊断（已脱敏）\n");
-        b.append("版本   1.0.0\n")
+        b.append("版本   1.1.0\n")
          .append("设备   ").append(i.brand).append(' ').append(i.model).append('\n')
          .append("系统   Android ").append(i.android).append(" · API ").append(i.sdkInt).append('\n')
          .append("ABI    ").append(i.primaryAbi).append('\n')

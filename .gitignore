@@ -9,12 +9,13 @@
 .env
 libstage/
 cpolar-libs/
+frpc-libs/
 out/
 classes/
 dexout/
 gen/
 res.zip
-base.apk
-work.apk
-aligned.apk
+base*.apk
+work*.apk
+aligned*.apk
 local.properties

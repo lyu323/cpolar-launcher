@@ -14,7 +14,7 @@ import android.content.SharedPreferences;
 public final class Disclaimer {
     private Disclaimer() {}
 
-    public static final String VERSION = "1.0";
+    public static final String VERSION = "1.1";
     public static final String QQ_URL = "https://qm.qq.com/q/9J7OMIFrzy";
 
     public static final String BINARY_FROM =
@@ -30,6 +30,8 @@ public final class Disclaimer {
       + "· 网络行为：客户端会连接 cpolar 官方服务（api.cpolar.com、cpolard.cpolar.com:4443、"
       + "官方面板与分配的 *.cpolar 域名），并在本机开 4040 / 9200 管理端口。"
       + "除此之外本 App 不向任何第三方地址发送数据，无广告/统计/推送 SDK。\n"
+      + "· 更新检查：仅在你手动点「检查更新」时访问 GitHub 公开 API 读取本项目 Release 版本信息，"
+      + "只读取、不上传任何数据；不点不联网，不自动下载或安装。\n"
       + "· 本机数据：authtoken、配置、日志、地址记录只存本机，卸载即清除；"
       + "不读 IMEI / MAC / 位置 / 通讯录 / 应用列表 / 剪贴板。\n"
       + "· 免费版：随机公网域名约 24 小时变化、带宽约 1M，付费固定域名需自行在官方面板配置。\n"
@@ -68,6 +70,9 @@ public final class Disclaimer {
          .append("· dashboard.cpolar.com（仅由浏览器跳转，App 自身不请求）\n")
          .append("· 分配给你的 *.cpolar.top / *.cpolar.cn / *.cpolar.io 公网域名\n")
          .append("· 本机 127.0.0.1:4040（隧道检查接口）与 127.0.0.1:9200（Web UI）\n")
+         .append("唯一的例外是手动触发的更新检查：点「检查更新」时访问 api.github.com 的公开 "
+                 + "Release 接口，仅 GET 版本信息，不发送任何本机数据，不自动下载、不自动安装；"
+                 + "不点不联网。\n")
          .append("本启动器自身只访问本机 4040 接口读取地址，不主动访问任何第三方服务器。"
                  + "不含广告、统计、崩溃上报或推送 SDK。\n\n");
 
@@ -95,6 +100,8 @@ public final class Disclaimer {
             "*.cpolar.top / .cn / .io  分配给你的公网隧道域名",
             "127.0.0.1:4040           本机检查接口（读取公网地址）",
             "127.0.0.1:9200           本机 Web UI（可选开启）",
+            "api.github.com          检查更新：仅手动点按钮时读取公开 Release 信息",
+            "github.com              项目主页 / Releases 下载（仅浏览器跳转）",
         };
     }
 
