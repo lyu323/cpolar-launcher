@@ -39,8 +39,9 @@ $BT/aapt2 link -o base.apk -I "$AJ" \
     --version-code 1 --version-name 1.0.0 \
     --java gen res.zip
 
-cp base.apk "$OUT_DIR/work.apk"
-zip -q -j "$OUT_DIR/work.apk" dexout/classes.dex
+WORK_ABS="$PWD/work.apk"
+cp base.apk "$WORK_ABS"
+zip -q -j "$WORK_ABS" dexout/classes.dex
 
 echo "== 加入 cpolar 官方客户端 (stored, 不压缩) =="
 # cpolar 客户端是官方发布的第三方闭源二进制，不随本仓库分发：
@@ -49,10 +50,10 @@ STAGE="${CPOLAR_LIBS_DIR:-../cpolar-libs}"
 if [ ! -d "$STAGE/lib" ]; then
     echo "缺少内核二进制：请设置 CPOLAR_LIBS_DIR 指向含 lib/<abi>/libcpolar.so 的目录"; exit 1
 fi
-(cd "$STAGE" && zip -q -0 -r "$OUT_DIR/work.apk" lib)
+(cd "$STAGE" && zip -q -0 -r "$WORK_ABS" lib)
 
 echo "== zipalign =="
-$BT/zipalign -f 4 "$OUT_DIR/work.apk" aligned.apk
+$BT/zipalign -f 4 "$WORK_ABS" aligned.apk
 
 echo "== apksigner =="
 # 签名密钥绝不随源码分发：自备 .jks，密码只从环境变量读取
