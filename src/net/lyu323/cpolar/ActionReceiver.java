@@ -1,4 +1,4 @@
-package net.cpolar.mobile;
+package net.lyu323.cpolar;
 
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
@@ -12,12 +12,12 @@ import android.widget.Toast;
 /** 通知栏 / 磁贴的动作广播：启停、重启、复制地址、看日志、地址列表。 */
 public class ActionReceiver extends BroadcastReceiver {
 
-    public static final String A_STOP = "net.cpolar.mobile.STOP";
-    public static final String A_START = "net.cpolar.mobile.START";
-    public static final String A_RESTART = "net.cpolar.mobile.RESTART";
-    public static final String A_COPY = "net.cpolar.mobile.COPY_URL";
-    public static final String A_LOG = "net.cpolar.mobile.OPEN_LOG";
-    public static final String A_URLS = "net.cpolar.mobile.OPEN_URLS";
+    public static final String A_STOP = "net.lyu323.cpolar.STOP";
+    public static final String A_START = "net.lyu323.cpolar.START";
+    public static final String A_RESTART = "net.lyu323.cpolar.RESTART";
+    public static final String A_COPY = "net.lyu323.cpolar.COPY_URL";
+    public static final String A_LOG = "net.lyu323.cpolar.OPEN_LOG";
+    public static final String A_URLS = "net.lyu323.cpolar.OPEN_URLS";
 
     @Override public void onReceive(Context c, Intent i) {
         String a = i == null ? "" : i.getAction();

@@ -1,4 +1,4 @@
-package net.cpolar.mobile;
+package net.lyu323.cpolar;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -39,10 +39,10 @@ import java.util.List;
  */
 public class CpolarService extends Service {
 
-    public static final String ACTION_START = "net.cpolar.mobile.SVC_START";
-    public static final String ACTION_STOP = "net.cpolar.mobile.SVC_STOP";
-    public static final String ACTION_RESTART = "net.cpolar.mobile.SVC_RESTART";
-    public static final String ACTION_REFRESH = "net.cpolar.mobile.SVC_REFRESH";
+    public static final String ACTION_START = "net.lyu323.cpolar.SVC_START";
+    public static final String ACTION_STOP = "net.lyu323.cpolar.SVC_STOP";
+    public static final String ACTION_RESTART = "net.lyu323.cpolar.SVC_RESTART";
+    public static final String ACTION_REFRESH = "net.lyu323.cpolar.SVC_REFRESH";
 
     public static final String CH_MAIN = "cpolar";
     public static final String CH_EVENT = "cpolar_event";

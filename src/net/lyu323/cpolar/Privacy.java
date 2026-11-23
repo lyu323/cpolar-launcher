@@ -1,4 +1,4 @@
-package net.cpolar.mobile;
+package net.lyu323.cpolar;
 
 import android.app.Activity;
 import android.app.ActivityManager;

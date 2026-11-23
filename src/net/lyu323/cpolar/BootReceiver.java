@@ -1,4 +1,4 @@
-package net.cpolar.mobile;
+package net.lyu323.cpolar;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

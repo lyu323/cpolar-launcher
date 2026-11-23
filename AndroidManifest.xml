@@ -1,10 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="net.cpolar.mobile"
-    android:versionCode="2"
-    android:versionName="1.1.0">
+    package="net.lyu323.cpolar"
+    android:versionCode="3"
+    android:versionName="1.2.0">
 
     <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="35" />
+
+    <!-- v1.2.0：Android 11+ 包可见性。不声明就查不到已安装的 QQ，
+         这正是「明明装了 QQ 却跳浏览器」的根因之一。 -->
+    <queries>
+        <package android:name="com.tencent.mobileqq" />
+        <package android:name="com.tencent.tim" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="mqqwpa" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="mqq" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="mqqapi" />
+        </intent>
+        <!-- QQ 官方落地页在 Android 上用的通道，不声明会误判成「没有通道」 -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="mqqopensdkapi" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" android:host="qm.qq.com" />
+        </intent>
+    </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -60,12 +88,12 @@
 
         <receiver android:name=".ActionReceiver" android:exported="false">
             <intent-filter>
-                <action android:name="net.cpolar.mobile.COPY_URL" />
-                <action android:name="net.cpolar.mobile.OPEN_LOG" />
-                <action android:name="net.cpolar.mobile.OPEN_URLS" />
-                <action android:name="net.cpolar.mobile.STOP" />
-                <action android:name="net.cpolar.mobile.START" />
-                <action android:name="net.cpolar.mobile.RESTART" />
+                <action android:name="net.lyu323.cpolar.COPY_URL" />
+                <action android:name="net.lyu323.cpolar.OPEN_LOG" />
+                <action android:name="net.lyu323.cpolar.OPEN_URLS" />
+                <action android:name="net.lyu323.cpolar.STOP" />
+                <action android:name="net.lyu323.cpolar.START" />
+                <action android:name="net.lyu323.cpolar.RESTART" />
             </intent-filter>
         </receiver>
     </application>

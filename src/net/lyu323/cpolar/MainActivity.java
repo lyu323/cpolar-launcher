@@ -1,4 +1,4 @@
-package net.cpolar.mobile;
+package net.lyu323.cpolar;
 
 import android.app.Activity;
 import android.content.DialogInterface;
@@ -37,7 +37,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- * Cpolar 启动器 v1.0 · 主界面
+ * Cpolar 启动器 v1.2.0 · 主界面
  *
  * 「结合历史聊天记录」：沿用前几版启动器的设计语言与工程约定
  *   · 纯 Java 原生、零第三方依赖、21 套主题 + 动态液态玻璃弹窗
@@ -83,11 +83,13 @@ public class MainActivity extends Activity {
         loadPrefs();
         switchPage(sp.getInt("page", 0));
         if (!new File(getFilesDir(), "runtime.log").exists()) {
-            CpolarService.append(this, "[提示] Cpolar 启动器 v1.0 · 基于官方文档与 GitHub 仓库构建");
+            CpolarService.append(this, "[提示] Cpolar 启动器 v1.2.0 · 基于官方文档与 GitHub 仓库构建");
             CpolarService.append(this, "[提示] 流程：官方面板复制 authtoken → 添加隧道 → 生成配置 → 启动");
             CpolarService.append(this, "[提示] 一条 start-all 命令可同时启动 cpolar.yml 里所有隧道");
             CpolarService.append(this, "[提示] 公网地址由进程输出与本机 4040 检查接口自动获取");
             CpolarService.append(this, "[提示] 内置客户端为 2022 年官方 ARM 版，设置页可导入最新内核");
+            CpolarService.append(this, "[提示] v1.2.0：联系作者改用 QQ 官方直达通道，装了 QQ 不再跳浏览器");
+            CpolarService.append(this, "[提示] v1.2.0：包名 net.lyu323.cpolar · 检查更新连接本项目 GitHub Releases");
         }
         if (Build.VERSION.SDK_INT >= 33
                 && checkSelfPermission("android.permission.POST_NOTIFICATIONS")
@@ -180,7 +182,7 @@ public class MainActivity extends Activity {
         texts.addView(titleRow);
 
         TextView s = new TextView(this);
-        s.setText("本地启动 cpolar 官方客户端 · 免 Root · v1.0");
+        s.setText("本地启动 cpolar 官方客户端 · 免 Root · v1.2.0");
         s.setTextSize(11);
         s.setTextColor(0xFFD6E4FF);
         s.setSingleLine(true);
@@ -546,7 +548,7 @@ public class MainActivity extends Activity {
 
     private void settingsPage(LinearLayout box) {
         cardHost = box;
-        box.addView(Ui.osTitle(this, "设置", "v1.0"), Ui.gap(this, 8));
+        box.addView(Ui.osTitle(this, "设置", "v1.2.0"), Ui.gap(this, 8));
 
         box.addView(Ui.section(this, "外观"), Ui.gap(this, 8));
         LinearLayout look = Ui.card(this);
@@ -617,6 +619,11 @@ public class MainActivity extends Activity {
         uv.setTextSize(10);
         uv.setTextColor(Ui.MUTED);
         upd.addView(uv, Ui.gap(this, 6));
+        tvLastCheck = new TextView(this);
+        tvLastCheck.setTextSize(10);
+        tvLastCheck.setTextColor(Ui.MUTED);
+        upd.addView(tvLastCheck, Ui.gap(this, 4));
+        updateLastCheckLabel();
         box.addView(upd, Ui.gap(this, 10));
 
         box.addView(Ui.section(this, "声明与作者"), Ui.gap(this, 8));
@@ -1035,16 +1042,50 @@ public class MainActivity extends Activity {
                 }).show();
     }
 
+    /** v1.2.0：内置官方落地页直达 QQ 加好友页，零联网、零剪贴板写入。 */
     private void openQq() {
-        try {
-            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(Disclaimer.QQ_URL));
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(i);
-            toast("正在跳转 QQ… 未安装 QQ 会用浏览器打开");
-        } catch (Exception e) {
-            copy(Disclaimer.QQ_URL);
-            toast("没有可打开链接的应用，链接已复制");
-        }
+        final String uin = sp.getString("qqUin", "").trim();
+        final String landing = sp.getString("qqLanding", QqHelper.QQ_LANDING_DEFAULT);
+        final String rawUin = sp.getString("qqRawUin", QqHelper.QQ_RAWUIN_DEFAULT);
+        final String cardType = sp.getString("qqCardType", QqHelper.QQ_CARDTYPE_DEFAULT);
+        QqHelper.Result r = QqHelper.launch(this, landing, rawUin, cardType, uin);
+        toast(r.message);
+        CpolarService.append(this, "[作者] " + r.detail + " · " + r.message + " · 本机直达（无需联网）");
+    }
+
+    /** 可选：联网向 QQ 官方刷新落地页，失败也不影响内置直达。 */
+    private void refreshQqLanding() {
+        toast("正在向 QQ 官方解析加好友页…");
+        new Thread(new Runnable() {
+            @Override public void run() {
+                final String enc = QqHelper.resolveNetwork().encode();
+                h.post(new Runnable() {
+                    @Override public void run() {
+                        QqHelper.Resolve res = QqHelper.Resolve.decode(enc);
+                        if ("offline".equals(res.source)) {
+                            toast("解析失败，已保留内置加好友页，仍可直达");
+                            CpolarService.append(MainActivity.this,
+                                    "[作者] 加好友页刷新失败，继续使用内置落地页");
+                            return;
+                        }
+                        sp.edit().putString("qqLanding", res.landing)
+                                .putString("qqRawUin", res.rawUin)
+                                .putString("qqCardType", res.cardType)
+                                .putString("qqResolveSource", res.source).commit();
+                        toast("已刷新 QQ 官方加好友页");
+                        CpolarService.append(MainActivity.this,
+                                "[作者] 已刷新官方落地页 · 来源=" + res.source);
+                    }
+                });
+            }
+        }, "qq-resolve").start();
+    }
+
+    /** 弹窗里独立的「用浏览器打开」，不冒充 QQ 跳转、不复制。 */
+    private void openQqInBrowser() {
+        QqHelper.Result r = QqHelper.openBrowser(this);
+        toast(r.message);
+        CpolarService.append(this, "[作者] " + r.detail + " · " + r.message);
     }
 
     private void authorDialog() {
@@ -1052,45 +1093,188 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         int pad = Ui.dp(this, 4);
         box.setPadding(pad, pad, pad, pad);
-        box.addView(Ui.osTitle(this, "联系作者", "v1.0"), Ui.gap(this, 8));
+        box.addView(Ui.osTitle(this, "联系作者", "v1.2.0"), Ui.gap(this, 8));
         box.addView(Ui.osTip(this,
-                "反馈问题、提需求、报 bug 都欢迎直接加我 QQ。"
-                + "链接是 QQ 官方加好友跳转页，由系统拉起 QQ；未安装时落到浏览器。", 2),
-                Ui.gap(this, 12));
-        box.addView(Ui.section(this, "QQ 加好友链接"), Ui.gap(this, 6));
+                "已修复「装了 QQ 却跳浏览器」：现在走 QQ 官方落地页的 Android 通道"
+                + "（mqqopensdkapi://bizAgent/qm/qr）直达加好友页，落地页内置、点击无需联网。"
+                + "也不会再自动复制链接 —— 只有点「复制链接」才写剪贴板。", 2),
+                Ui.gap(this, 10));
+
+        box.addView(Ui.section(this, "本机检测"), Ui.gap(this, 8));
+        box.addView(Ui.osRow(this, QqHelper.status(this), QqHelper.diagnose(this),
+                "", true), Ui.match());
+        String qs = sp.getString("qqResolveSource", "");
+        box.addView(Ui.osRow(this, "加好友页解析",
+                "内置官方落地页（带 k）· 点击直达，无需联网"
+                        + (qs.length() > 0 ? " · 已刷新（" + qs + "）" : ""),
+                "", false), Ui.match());
+        box.addView(Ui.button(this, "↻ 刷新加好友页（联网解析一次）", 2,
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) { refreshQqLanding(); }
+                }), Ui.gap(this, 6));
+
+        box.addView(Ui.section(this, "作者 QQ 号（可选，直达指定资料卡）"), Ui.gap(this, 8));
+        final EditText etUin = Ui.edit(this,
+                "填纯数字 QQ 号，留空则走官方加好友页", 1, false, false);
+        etUin.setText(sp.getString("qqUin", ""));
+        box.addView(etUin, Ui.gap(this, 4));
+        TextView uinTip = new TextView(this);
+        uinTip.setText("留空即可：会用官方短链直达；填了号码则优先打开该 QQ 的资料卡。");
+        uinTip.setTextSize(10);
+        uinTip.setTextColor(Ui.MUTED);
+        box.addView(uinTip);
+
+        box.addView(Ui.section(this, "QQ 加好友链接"), Ui.gap(this, 8));
         TextView url = new TextView(this);
-        url.setText(Disclaimer.QQ_URL);
+        url.setText(QqHelper.QQ_URL);
         url.setTextSize(12);
         url.setTextColor(Ui.BLUE);
         url.setTextIsSelectable(true);
         url.setPadding(Ui.dp(this, 4), Ui.dp(this, 8), Ui.dp(this, 4), Ui.dp(this, 8));
         box.addView(url);
+        box.addView(Ui.osRow(this, "用途", "问题反馈 / 功能建议 / 隧道排障", "", true), Ui.match());
+        box.addView(Ui.osRow(this, "隐私",
+                "点击只跳转 QQ / 浏览器，本 App 不收集、不上传任何设备或账号信息", "", false),
+                Ui.match());
+        // 全 App 唯一写 QQ 链接到剪贴板的地方，且 3 秒内重复点不重复写
+        box.addView(Ui.button(this, "复制链接", 2, new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                boolean wrote = QqHelper.copyLink(MainActivity.this);
+                toast(wrote ? "已复制加好友链接" : "链接已在剪贴板，无需重复复制");
+            }
+        }), Ui.gap(this, 6));
+
         new GlassDialog.Builder(this)
                 .setTitle("✉ 联系作者")
+                .setSubtitle("直达 QQ 加好友页 · 不再自动复制")
                 .setView(box)
                 .setPositiveButton("打开 QQ 加好友", new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int w) { openQq(); }
+                    @Override public void onClick(DialogInterface d, int w) {
+                        sp.edit().putString("qqUin", etUin.getText().toString().trim()).commit();
+                        openQq();
+                    }
                 })
-                .setNeutralButton("复制链接", new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int w) { copy(Disclaimer.QQ_URL); }
+                .setNeutralButton("用浏览器打开", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { openQqInBrowser(); }
                 })
                 .setNegativeButton("关闭", null).show();
     }
 
-    /** v1.1.0：手动检查更新，连接本项目 GitHub Releases（只读取，不上传）。 */
-    private void checkUpdate() {
-        toast("正在连接 GitHub 检查更新…");
+    /** v1.2.0：检查更新缓存有效期 10 分钟，期间重复点击不重复联网。 */
+    private static final long UPDATE_CACHE_MS = 10L * 60 * 1000;
+
+    /** 设置页「版本更新」卡里的「上次检查」行，检查完即时刷新。 */
+    TextView tvLastCheck;
+
+    /** v1.2.0：手动检查更新，连接本项目 GitHub Releases（只读取，不上传）。 */
+    private void checkUpdate() { checkUpdate(false); }
+
+    /** 10 分钟内复用上次结果，避免重复联网；force=true 时强制刷新。 */
+    private void checkUpdate(final boolean force) {
+        final long at = sp.getLong("updateAt", 0L);
+        String cached = sp.getString("updateJson", "");
+        if (!force && cached.length() > 0 && System.currentTimeMillis() - at < UPDATE_CACHE_MS) {
+            showUpdateResult(UpdateChecker.parse(cached), true, at);
+            return;
+        }
+        toast(force ? "正在强制刷新 GitHub Release…" : "正在连接 GitHub 检查更新…");
         UpdateChecker.checkAsync(new UpdateChecker.Callback() {
-            @Override public void done(UpdateChecker.Info info) { showUpdateResult(info); }
+            @Override public void done(final UpdateChecker.Info info) {
+                if (info.ok && info.raw.length() > 0) {
+                    sp.edit().putString("updateJson", info.raw)
+                            .putLong("updateAt", System.currentTimeMillis()).commit();
+                    updateLastCheckLabel();
+                }
+                showUpdateResult(info, false, System.currentTimeMillis());
+            }
         });
+    }
+
+    private String timeAgo(long at) {
+        if (at <= 0L) return "尚未检查";
+        long d = System.currentTimeMillis() - at;
+        if (d < 60000L) return "刚刚";
+        if (d < 3600000L) return (d / 60000L) + " 分钟前";
+        return android.text.format.DateFormat.getTimeFormat(this)
+                .format(new java.util.Date(at));
+    }
+
+    private void updateLastCheckLabel() {
+        if (tvLastCheck != null)
+            tvLastCheck.setText("上次检查：" + timeAgo(sp.getLong("updateAt", 0L))
+                    + " · 10 分钟内重复点不重复联网");
     }
 
     private void openGithub(String url) {
         if (!UpdateChecker.open(MainActivity.this, url)) toast("无法打开浏览器");
     }
 
+    /** MIT 许可全文内联展示，不必跳浏览器。 */
+    private static final String MIT_LICENSE =
+            "MIT License\n\nCopyright (c) 2026 lyu323\n\n"
+          + "Permission is hereby granted, free of charge, to any person obtaining a copy\n"
+          + "of this software and associated documentation files (the \"Software\"), to deal\n"
+          + "in the Software without restriction, including without limitation the rights\n"
+          + "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n"
+          + "copies of the Software, and to permit persons to whom the Software is\n"
+          + "furnished to do so, subject to the following conditions:\n\n"
+          + "The above copyright notice and this permission notice shall be included in all\n"
+          + "copies or substantial portions of the Software.\n\n"
+          + "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+          + "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+          + "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n"
+          + "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n"
+          + "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
+          + "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n"
+          + "SOFTWARE.\n\n"
+          + "注：第三方内核二进制不在本许可范围内，权利归其原作者所有。";
+
+    private void licenseDialog() {
+        LinearLayout b = new LinearLayout(this);
+        b.setOrientation(LinearLayout.VERTICAL);
+        b.setPadding(Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4));
+        b.addView(Ui.osTitle(this, "开源许可声明", "MIT"), Ui.gap(this, 8));
+        b.addView(Ui.osTip(this,
+                "本 App 自己编写的 Java 源码、资源、构建脚本与文档采用 MIT 许可。"
+                + "第三方内核二进制与官方服务条款不在本许可范围内。", 2), Ui.gap(this, 10));
+        TextView t = new TextView(this);
+        t.setText(MIT_LICENSE);
+        t.setTextSize(11);
+        t.setTextColor(Ui.TEXT);
+        t.setTextIsSelectable(true);
+        b.addView(t, Ui.gap(this, 8));
+        new GlassDialog.Builder(this)
+                .setTitle("MIT License")
+                .setSubtitle("可下滑查看完整条款 · 文本已可选中")
+                .setView(b)
+                .setPositiveButton("知道了", null)
+                .setNeutralButton("复制条款", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { copy(MIT_LICENSE); }
+                })
+                .setNegativeButton("在 GitHub 查看", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        openGithub(UpdateChecker.LICENSE_URL);
+                    }
+                }).show();
+    }
+
+    /** 长按版本号复制构建信息，方便直接发给作者排障。 */
+    private void bindVersionLongClick(TextView v) {
+        v.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override public boolean onLongClick(View view) {
+                copy("Cpolar 启动器 " + UpdateChecker.APP_VERSION + "\n"
+                        + "包名 " + getPackageName() + "\n"
+                        + "仓库 github.com/" + UpdateChecker.REPO + "\n"
+                        + "versionCode " + "3");
+                toast("已复制构建信息");
+                return true;
+            }
+        });
+    }
+
     /** 结果弹窗：和「设置 / 关于」同一套液态玻璃卡片。 */
-    private void showUpdateResult(final UpdateChecker.Info info) {
+    private void showUpdateResult(final UpdateChecker.Info info,
+                                  final boolean cached, final long at) {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4));
@@ -1100,7 +1284,9 @@ public class MainActivity extends Activity {
         box.addView(Ui.section(this, "数据源"), Ui.gap(this, 8));
         box.addView(Ui.osRow(this, "GitHub 仓库", UpdateChecker.REPO, "", true), Ui.match());
         box.addView(Ui.osRow(this, "联网时机", "仅手动点「检查更新」时读取公开 Release 信息，不上传任何数据", "", true), Ui.match());
-        box.addView(Ui.osRow(this, "本机版本", UpdateChecker.APP_VERSION, "", false), Ui.match());
+        box.addView(Ui.osRow(this, "本机版本", UpdateChecker.APP_VERSION + " · " + getPackageName(), "", true), Ui.match());
+        box.addView(Ui.osRow(this, cached ? "本次结果" : "上次检查",
+                cached ? "使用了 10 分钟内缓存（" + timeAgo(at) + "）" : "刚刚联网读取", "", false), Ui.match());
         if (info.ok) {
             box.addView(Ui.section(this, "最新版本"), Ui.gap(this, 8));
             String title = info.tag + (info.name.length() > 0 ? " · " + info.name : "");
@@ -1111,6 +1297,16 @@ public class MainActivity extends Activity {
                 box.addView(Ui.section(this, "更新说明"), Ui.gap(this, 8));
                 box.addView(Ui.osTip(this, brief, 0), Ui.gap(this, 8));
             }
+            box.addView(Ui.row(this,
+                    Ui.button(this, "复制 APK 下载链接", 2, new View.OnClickListener() {
+                        @Override public void onClick(View v) {
+                            if (info.apkUrl.length() == 0) { toast("该 Release 暂无 APK 资产"); return; }
+                            copy(info.apkUrl); toast("已复制 APK 下载直链");
+                        }
+                    }),
+                    Ui.button(this, "↻ 强制刷新", 2, new View.OnClickListener() {
+                        @Override public void onClick(View v) { checkUpdate(true); }
+                    })), Ui.gap(this, 8));
         }
 
         final String page = info.ok && info.htmlUrl.length() > 0
@@ -1118,7 +1314,7 @@ public class MainActivity extends Activity {
         final String apk = info.apkUrl.length() > 0 ? info.apkUrl : UpdateChecker.RELEASES_URL;
         new GlassDialog.Builder(this)
                 .setTitle(info.ok && info.newer ? "发现新版本" : "检查更新")
-                .setSubtitle("连接本项目 GitHub Releases · 只读取版本信息")
+                .setSubtitle(cached ? "本机缓存 · 未消耗流量" : "连接本项目 GitHub Releases · 只读取版本信息")
                 .setView(box)
                 .setPositiveButton("打开 Releases / 下载页", new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) { openGithub(page); }
@@ -1135,7 +1331,7 @@ public class MainActivity extends Activity {
     /** 图二风格的项目 / 更新行，设置页与关于页共用。 */
     private void addProjectRows(LinearLayout box) {
         box.addView(Ui.section(this, "项目与更新"), Ui.gap(this, 8));
-        View r1 = Ui.osRow(this, "检查更新", "连接本项目 GitHub Releases，手动检查新版本", "", true);
+        View r1 = Ui.osRow(this, "检查更新", "连接本项目 GitHub Releases，手动检查新版本（10 分钟缓存）", "", true);
         r1.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { checkUpdate(); }
         });
@@ -1155,9 +1351,9 @@ public class MainActivity extends Activity {
             @Override public void onClick(View v) { openGithub(UpdateChecker.CHANGELOG_URL); }
         });
         box.addView(r4, Ui.match());
-        View r5 = Ui.osRow(this, "开源许可声明", "MIT · LICENSE", "", true);
+        View r5 = Ui.osRow(this, "开源许可声明", "MIT · 点开看全文（不必跳浏览器）", "", true);
         r5.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { openGithub(UpdateChecker.LICENSE_URL); }
+            @Override public void onClick(View v) { licenseDialog(); }
         });
         box.addView(r5, Ui.match());
         View r6 = Ui.osRow(this, "同账号下的另一个项目", UpdateChecker.OTHER_REPO, "", false);
@@ -1172,7 +1368,7 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         int pad = Ui.dp(this, 4);
         box.setPadding(pad, pad, pad, pad);
-        box.addView(Ui.osTitle(this, "使用帮助", "v1.1.0"), Ui.gap(this, 8));
+        box.addView(Ui.osTitle(this, "使用帮助", "v1.2.0"), Ui.gap(this, 8));
         box.addView(Ui.osTip(this,
                 "本启动器按 cpolar 官方文档实现：authtoken 认证、cpolar.yml 多隧道、"
                 + "start-all 一次启动、本机 4040 检查接口获取公网地址。", 2), Ui.gap(this, 10));
@@ -1189,18 +1385,34 @@ public class MainActivity extends Activity {
                 + "· 免费版随机域名约 24 小时变化；固定域名需在官方面板配置\n"
                 + "· 21 套主题、动态玻璃弹窗、通知栏、隐藏后台沿用历史启动器", 0), Ui.gap(this, 10));
         addProjectRows(box);
-        box.addView(Ui.section(this, "v1.1.0 新增"));
+        box.addView(Ui.section(this, "v1.2.0 新增（本版）"));
+        box.addView(Ui.osTip(this,
+                "· 修复「装了 QQ 却跳浏览器」：补齐包可见性声明，改用 QQ 官方落地页的 Android 通道"
+                + " mqqopensdkapi://bizAgent/qm/qr 直达加好友页，内置官方落地页零联网\n"
+                + "· 不再自动复制链接：只有点「复制链接」才写剪贴板，3 秒内不重复写\n"
+                + "· 联系作者弹窗新增本机检测、可选作者 QQ 号、独立「用浏览器打开」按钮\n"
+                + "· 统一改用 net.lyu323.cpolar 包名，与开源仓库归属一致\n"
+                + "· 检查更新加 10 分钟缓存、强制刷新、复制 APK 下载直链、上次检查时间\n"
+                + "· 关于页 MIT 许可内联弹窗、长按版本号复制构建信息", 0), Ui.gap(this, 10));
+
+        box.addView(Ui.section(this, "v1.2.0 新增"));
         box.addView(Ui.osTip(this,
                 "· 新增「检查更新」：连接本项目 GitHub Releases，手动点击才联网，只读取版本信息\n"
                 + "· 设置页「版本更新」卡片：检查更新 / 项目地址 / Star / 更新日志\n"
                 + "· 关于页新增项目与更新行，含另一个项目仓库入口\n"
                 + "· 免责声明与域名清单如实补充 GitHub 更新检查（不点不联网）", 0), Ui.gap(this, 10));
         TextView v = new TextView(this);
-        v.setText("\n版本 1.1.0 · 包名 net.cpolar.mobile\n"
+        v.setText("\n版本 1.2.0 · 包名 net.lyu323.cpolar\n"
                 + "内含 cpolar 官方闭源客户端，版权归官方所有");
         v.setTextSize(10);
         v.setTextColor(Ui.MUTED);
         box.addView(v);
+        bindVersionLongClick(v);
+        TextView verTip = new TextView(this);
+        verTip.setText("长按版本号可复制构建信息（版本 / 包名 / 仓库）");
+        verTip.setTextSize(10);
+        verTip.setTextColor(Ui.MUTED);
+        box.addView(verTip);
         new GlassDialog.Builder(this)
                 .setTitle("使用帮助 / 关于")
                 .setView(box)
@@ -1565,7 +1777,7 @@ public class MainActivity extends Activity {
     private void copyDiagnostics() {
         DeviceInfo.Info i = DeviceInfo.collect(this);
         StringBuilder b = new StringBuilder("Cpolar 启动器 运行诊断（已脱敏）\n");
-        b.append("版本   1.1.0\n")
+        b.append("版本   1.2.0\n")
          .append("设备   ").append(i.brand).append(' ').append(i.model).append('\n')
          .append("系统   Android ").append(i.android).append(" · API ").append(i.sdkInt).append('\n')
          .append("ABI    ").append(i.primaryAbi).append('\n')

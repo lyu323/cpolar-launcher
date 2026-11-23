@@ -1,4 +1,4 @@
-package net.cpolar.mobile;
+package net.lyu323.cpolar;
 
 import android.content.Context;
 import android.content.Intent;
@@ -45,7 +45,7 @@ public final class UpdateChecker {
     public static final String OTHER_REPO_URL = "https://github.com/" + OTHER_REPO;
 
     /** 当前版本，必须与 AndroidManifest.xml / build.sh 的 versionName 一致。 */
-    public static final String APP_VERSION = "1.1.0";
+    public static final String APP_VERSION = "1.2.0";
 
     public static final class Info {
         public boolean ok = false;          // 请求与解析是否成功
@@ -58,6 +58,7 @@ public final class UpdateChecker {
         public String sourceUrl = "";       // 源码 zip 直链
         public String error = "";           // 失败原因（说人话）
         public String current = APP_VERSION; // 本次比较所用的本机版本
+        public String raw = "";             // 原始响应，仅用于本机 10 分钟缓存
 
         public String status() {
             if (!ok) return "检查失败：" + error;
@@ -167,6 +168,7 @@ public final class UpdateChecker {
         i.apkUrl = pickApk(urls);
         i.sourceUrl = pickSource(urls);
         i.current = currentVersion;
+        i.raw = json;
         i.ok = true;
         i.newer = compare(i.tag, currentVersion) > 0;
         return i;

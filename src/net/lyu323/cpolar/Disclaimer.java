@@ -1,4 +1,4 @@
-package net.cpolar.mobile;
+package net.lyu323.cpolar;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -15,7 +15,8 @@ public final class Disclaimer {
     private Disclaimer() {}
 
     public static final String VERSION = "1.1";
-    public static final String QQ_URL = "https://qm.qq.com/q/9J7OMIFrzy";
+    /** 展示用；实际跳转统一交给 QqHelper（直达官方加好友页）。 */
+    public static final String QQ_URL = QqHelper.QQ_URL;
 
     public static final String BINARY_FROM =
             "GitHub 仓库 cmilove92/cpolar 内附的官方 cpolar Linux ARM 客户端\n"

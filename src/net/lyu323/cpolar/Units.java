@@ -1,4 +1,4 @@
-package net.cpolar.mobile;
+package net.lyu323.cpolar;
 
 /** 流量/速度单位格式化：B → KB → MB → GB，纯 Java 便于离线验证。 */
 public final class Units {

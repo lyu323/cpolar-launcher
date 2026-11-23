@@ -1,4 +1,4 @@
-package net.cpolar.mobile;
+package net.lyu323.cpolar;
 
 /** 一条 cpolar 隧道（对应 cpolar.yml 里 tunnels 下的一个段）。 */
 public final class CpolarTunnel {
