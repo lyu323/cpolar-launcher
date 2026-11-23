@@ -72,4 +72,4 @@ bash build.sh
 
 ## 许可
 
-[MIT](LICENSE) · 第三方 cpolar 客户端二进制**不在本许可范围内**，其权利归 cpolar 官方所有。
+[MIT](LICENSE) · 第三方 `libcpolar.so` 客户端二进制**不在本许可范围内**，其权利归 cpolar 官方所有。
