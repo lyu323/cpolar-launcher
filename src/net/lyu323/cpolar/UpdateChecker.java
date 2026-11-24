@@ -45,7 +45,7 @@ public final class UpdateChecker {
     public static final String OTHER_REPO_URL = "https://github.com/" + OTHER_REPO;
 
     /** 当前版本，必须与 AndroidManifest.xml / build.sh 的 versionName 一致。 */
-    public static final String APP_VERSION = "1.2.0";
+    public static final String APP_VERSION = "1.3.0";
 
     public static final class Info {
         public boolean ok = false;          // 请求与解析是否成功
@@ -245,6 +245,43 @@ public final class UpdateChecker {
         if (m.contains("SSL") || m.contains("Cert"))
             return "证书校验失败";
         return "无法连接 GitHub，可手动打开 Releases 页";
+    }
+
+
+    /** v1.3.0：把 Release 说明的 Markdown 转成弹窗里好读的纯文本（不依赖任何库）。 */
+    public static String plain(String md) {
+        if (md == null) return "";
+        StringBuilder b = new StringBuilder();
+        String[] lines = md.split("\r?\n");
+        int blank = 0;
+        for (String raw : lines) {
+            String s = raw.trim();
+            if (s.length() == 0) {
+                blank++;
+                if (blank <= 1 && b.length() > 0) b.append("\n");
+                continue;
+            }
+            blank = 0;
+            if (s.matches("^\\|[\\s:\\-|]+\\|$")) continue;              // 表格分隔行
+            s = s.replaceAll("!\\[[^\\]]*\\]\\([^)]*\\)", "");            // 图片
+            s = s.replaceAll("\\[([^\\]]+)\\]\\([^)]*\\)", "$1");        // 链接 → 文字
+            if (s.startsWith("|") && s.endsWith("|")) {                   // 表格行 → · 单元
+                String[] cells = s.substring(1, s.length() - 1).split("\\|");
+                StringBuilder row = new StringBuilder("· ");
+                for (String c : cells) {
+                    String t = c.trim();
+                    if (t.length() > 0) row.append(t).append("   ");
+                }
+                s = row.toString().trim();
+            }
+            s = s.replaceAll("^#{1,6}\\s*", "");                           // 标题
+            s = s.replaceAll("^>\\s*", "");                                 // 引用
+            s = s.replaceAll("^[-*]\\s+", "• ");                           // 列表
+            s = s.replace("**", "").replace("__", "").replace("`", "");
+            s = s.replaceAll("\\s{2,}", " ");
+            if (s.length() > 0) b.append(s).append("\n");
+        }
+        return b.toString().trim();
     }
 
     /** 用浏览器打开 GitHub 页面；不指定包名，交给系统。 */

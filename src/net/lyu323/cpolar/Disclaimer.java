@@ -14,7 +14,7 @@ import android.content.SharedPreferences;
 public final class Disclaimer {
     private Disclaimer() {}
 
-    public static final String VERSION = "1.1";
+    public static final String VERSION = "1.2";
     /** 展示用；实际跳转统一交给 QqHelper（直达官方加好友页）。 */
     public static final String QQ_URL = QqHelper.QQ_URL;
 
@@ -31,8 +31,11 @@ public final class Disclaimer {
       + "· 网络行为：客户端会连接 cpolar 官方服务（api.cpolar.com、cpolard.cpolar.com:4443、"
       + "官方面板与分配的 *.cpolar 域名），并在本机开 4040 / 9200 管理端口。"
       + "除此之外本 App 不向任何第三方地址发送数据，无广告/统计/推送 SDK。\n"
-      + "· 更新检查：仅在你手动点「检查更新」时访问 GitHub 公开 API 读取本项目 Release 版本信息，"
-      + "只读取、不上传任何数据；不点不联网，不自动下载或安装。\n"
+      + "· 更新检查：启动后自动检查一次（可在设置关闭），手动点「检查更新」可随时检查；"
+      + "只访问 GitHub 公开 API 读取本项目 Release 版本信息，只读取、不上传任何数据；"
+      + "有新版本才弹窗提醒，不强制更新、同一版本只提醒一次，不自动下载或安装。\n"
+      + "· 本地下载：只有你点「本地下载」时，App 才从 GitHub Release 资产下载 APK 到本机私有目录，"
+      + "下载完调起系统安装界面，是否安装由你确认；不自动下载、不静默安装、不绕过系统校验。\n"
       + "· 本机数据：authtoken、配置、日志、地址记录只存本机，卸载即清除；"
       + "不读 IMEI / MAC / 位置 / 通讯录 / 应用列表 / 剪贴板。\n"
       + "· 免费版：随机公网域名约 24 小时变化、带宽约 1M，付费固定域名需自行在官方面板配置。\n"
@@ -71,9 +74,12 @@ public final class Disclaimer {
          .append("· dashboard.cpolar.com（仅由浏览器跳转，App 自身不请求）\n")
          .append("· 分配给你的 *.cpolar.top / *.cpolar.cn / *.cpolar.io 公网域名\n")
          .append("· 本机 127.0.0.1:4040（隧道检查接口）与 127.0.0.1:9200（Web UI）\n")
-         .append("唯一的例外是手动触发的更新检查：点「检查更新」时访问 api.github.com 的公开 "
-                 + "Release 接口，仅 GET 版本信息，不发送任何本机数据，不自动下载、不自动安装；"
-                 + "不点不联网。\n")
+         .append("更新检查分两种：启动后自动检查一次（设置里可关闭）与手动点「检查更新」。"
+                 + "两者都只访问 api.github.com 的公开 Release 接口，仅 GET 版本信息，"
+                 + "不发送任何本机数据；自动检查发现新版本才弹窗提醒，不强制、同一版本只提醒一次。\n")
+         .append("本地下载：仅在你点「本地下载」时，从 GitHub Release 资产（github.com 及其资产 CDN）"
+                 + "把 APK 下载到本机应用私有目录；完成后只调起系统安装界面，是否安装由你确认，"
+                 + "不自动下载、不静默安装、不绕过系统签名校验。\n")
          .append("本启动器自身只访问本机 4040 接口读取地址，不主动访问任何第三方服务器。"
                  + "不含广告、统计、崩溃上报或推送 SDK。\n\n");
 
@@ -101,8 +107,9 @@ public final class Disclaimer {
             "*.cpolar.top / .cn / .io  分配给你的公网隧道域名",
             "127.0.0.1:4040           本机检查接口（读取公网地址）",
             "127.0.0.1:9200           本机 Web UI（可选开启）",
-            "api.github.com          检查更新：仅手动点按钮时读取公开 Release 信息",
-            "github.com              项目主页 / Releases 下载（仅浏览器跳转）",
+            "api.github.com          检查更新：启动自动一次 + 手动检查，读取公开 Release 信息",
+            "github.com              项目主页 / Releases / 更新日志（仅浏览器跳转）",
+            "release-assets.githubusercontent.com   GitHub 资产 CDN：仅点「本地下载」时",
         };
     }
 

@@ -36,7 +36,7 @@ echo "== aapt2 link =="
 $BT/aapt2 link -o base.apk -I "$AJ" \
     --manifest AndroidManifest.xml \
     --min-sdk-version 23 --target-sdk-version 35 \
-    --version-code 3 --version-name 1.2.0 \
+    --version-code 4 --version-name 1.3.0 \
     --java gen res.zip
 
 WORK_ABS="$PWD/work.apk"
@@ -63,12 +63,12 @@ if [ -n "${KS_PASS:-}" ] && [ -f "$KS_FILE" ]; then
         --ks "$KS_FILE" --ks-pass "pass:$KS_PASS" \
         --key-pass "pass:${KEY_PASS:-$KS_PASS}" \
         --v1-signing-enabled true --v2-signing-enabled true \
-        --out "$OUT_DIR/CpolarLauncher-v1.2.0.apk" aligned.apk
+        --out "$OUT_DIR/CpolarLauncher-v1.3.0.apk" aligned.apk
     echo "== verify =="
-    $BT/apksigner verify --verbose "$OUT_DIR/CpolarLauncher-v1.2.0.apk"
+    $BT/apksigner verify --verbose "$OUT_DIR/CpolarLauncher-v1.3.0.apk"
 else
     echo "== 未配置 KS_PASS / keystore，输出未签名 APK（仅供本地调试） =="
-    cp aligned.apk "$OUT_DIR/CpolarLauncher-v1.2.0-unsigned.apk"
+    cp aligned.apk "$OUT_DIR/CpolarLauncher-v1.3.0-unsigned.apk"
 fi
 ls -lh "$OUT_DIR"
 echo "== 完成 =="
